@@ -12,6 +12,7 @@ id = '486690f872c678126a2c09a9e196ce1b'
 
 # capture png file
 timestamp = `date +"Screen Shot %Y-%m-%d at %H.%M.%S %p"`
+system "mkdir ~/Screenshots"
 tmpfile = "/Users/#{user}/Screenshots/#{timestamp.chomp}.png"
 imagefile = ARGV[1]
 
