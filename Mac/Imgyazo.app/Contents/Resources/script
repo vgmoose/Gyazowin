@@ -26,6 +26,8 @@ if !File.exist?(tmpfile) then
     exit
 end
 
+system "Imgyazo.app/Contents/Resources/resample-dpi \"#{tmpfile}\""
+
 imagedata = File.read(tmpfile)
 #File.delete(tmpfile)
 
