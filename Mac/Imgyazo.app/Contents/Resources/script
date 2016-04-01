@@ -2,13 +2,13 @@
 
 require 'net/http'
 require "rexml/document"
-include REXML
+require 'json'
 
 # get id
 user = IO.popen("whoami", "r+").gets.chomp
 program = ARGV[0].to_s
 
-id = '486690f872c678126a2c09a9e196ce1b'
+id = '3e7a4deb7ac67da'
 
 # capture png file
 timestamp = `date +"Screen Shot %Y-%m-%d at %H.%M.%S %p"`
@@ -34,8 +34,8 @@ imagedata = File.read(tmpfile)
 # upload
 boundary = '----BOUNDARYBOUNDARY----'
 
-HOST = 'imgur.com'
-CGI = '/api/upload.xml'
+HOST = 'api.imgur.com'
+CGI = '/3/upload'
 UA   = 'curl/7.30.0'
 
 data = <<EOF
@@ -54,21 +54,23 @@ EOF
 header ={
     'Content-Length' => data.length.to_s,
     'Content-type' => "multipart/form-data; boundary=#{boundary}",
-    'User-Agent' => UA
+    'User-Agent' => UA,
+    'Authorization' => "Client-ID #{id}"
 }
 
 url = ''
 
-Net::HTTP.start(HOST,80){|http|
-    res = http.post(CGI,data,header)
-    url = res.response.body
+http = Net::HTTP.new(HOST, 443)
+http.use_ssl = true
+res = http.post(CGI,data,header)
+url = res.response.body
 
-    }
+
+doc = JSON.parse(url)
     
-    doc = Document.new url
-    
-    orig_image = doc.elements['rsp'].elements['original_image'].text
-    delete_url = doc.elements['rsp'].elements['delete_page'].text
+orig_image = "https://i.imgur.com/#{doc["data"]["id"]}.png"
+delete_url = "https://i.imgur.com/delete/#{doc["data"]["deletehash"]}.png"
+
 #thumb = doc.elements['rsp'].elements['small_thumbnail'].text
 
     IO.popen("pbcopy","r+"){|io|

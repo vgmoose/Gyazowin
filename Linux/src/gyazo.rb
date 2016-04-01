@@ -6,12 +6,12 @@ clipboard_cmd = 'xclip'
 
 require 'net/http'
 require "rexml/document"
-include REXML
+require 'json'
 
 # get id
 idfile = ENV['HOME'] + "/.gyazo.id"
 
-id = '486690f872c678126a2c09a9e196ce1b'
+id = '3e7a4deb7ac67da'
 
 
 # capture png file
@@ -34,8 +34,8 @@ File.delete(tmpfile)
 # upload
 boundary = '----BOUNDARYBOUNDARY----'
 
-HOST = 'imgur.com'
-CGI = '/api/upload.xml'
+HOST = 'api.imgur.com'
+CGI = '/3/upload'
 UA   = 'curl/7.30.0'
 
 data = <<EOF
@@ -54,7 +54,8 @@ EOF
 header ={
   'Content-Length' => data.length.to_s,
   'Content-type' => "multipart/form-data; boundary=#{boundary}",
-  'User-Agent' => UA
+  'User-Agent' => UA,
+  'Authorization' => "Client-ID #{id}"
 }
 
 env = ENV['http_proxy']
@@ -65,15 +66,16 @@ else
   proxy_host, proxy_port = nil, nil
 end
 
-Net::HTTP::Proxy(proxy_host, proxy_port).start(HOST,80) {|http|
-  res = http.post(CGI,data,header)
-  url = res.response.body
- # puts url
+http = Net::HTTP.new(HOST, 443)
+http.use_ssl = true
+res = http.post(CGI,data,header)
+url = res.response.body
 
-   doc = Document.new url
+doc = doc = JSON.parse(url)
     
-    orig_image = doc.elements['rsp'].elements['original_image'].text
-    delete_url = doc.elements['rsp'].elements['delete_page'].text
+orig_image = "https://i.imgur.com/#{doc["data"]["id"]}.png"
+delete_url = "https://i.imgur.com/delete/#{doc["data"]["deletehash"]}.png"
+
 #thumb = doc.elements['rsp'].elements['small_thumbnail'].text
 
   if system "which #{clipboard_cmd} >/dev/null 2>&1" then
@@ -82,5 +84,3 @@ Net::HTTP::Proxy(proxy_host, proxy_port).start(HOST,80) {|http|
   system "#{browser_cmd} '#{orig_image}' &"
     system "echo \"<div style='padding:10px;width:250px;height:275px;float:left'><a href='#{orig_image}'><img src='#{tmpfile}' height=250 width=250></img></a><button style='width:250px;height:25px' onclick=javascript:location.href='#{delete_url}'> delete  </button></div>\" >> ~/Documents/imgyazo.html"
 
-
-}
