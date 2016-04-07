@@ -1,4 +1,4 @@
-**Notice**: As of 4/1/2016 Imgur has discontinued support for their legacy API, and Imgyazo needs an update. A new version of Imgyazo [is available for Linux and Mac](https://github.com/vgmoose/Imgyazo/releases/tag/v1.2). For the progress on the development of the Windows version, [see this issue](https://github.com/vgmoose/Imgyazo/issues/1).
+**Notice**: As of 4/1/2016 Imgur has discontinued support for their legacy API, and Imgyazo was updated. As a result, a new version of Imgyazo [is available for all platforms](https://github.com/vgmoose/Imgyazo/releases/tag/v1.2).
 
 ## Imgyazo
 Gyazo that uploads to Imgur instead.
