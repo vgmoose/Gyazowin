@@ -1,14 +1,13 @@
 // gyazowin.cpp : アプリケーションのエントリ ポイントを定義します。
 //
-include "stdafx.h"
-#include "rapidxml.hpp"
-include "gyazowin.h"
-include "rapidjson.h"
+#include "stdafx.h"
+#include "gyazowin.h"
+#include "rapidjson.h"
+#include "document.h"
 
-include <iostream>
-include <fstream>
+#include <iostream>
+#include <fstream>
 
-#using namespace rapidxml;
 using namespace rapidjson;
 
 
@@ -877,7 +876,7 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 	// 要求先の設定
 	HINTERNET hRequest    = HttpOpenRequest(hConnection,
 		_T("POST"), UPLOAD_PATH, NULL,
-		NULL, NULL, INTERNET_FLAG_DONT_CACHE | INTERNET_FLAG_RELOAD, NULL);
+		NULL, NULL, INTERNET_FLAG_DONT_CACHE | INTERNET_FLAG_RELOAD | INTERNET_FLAG_SECURE, NULL);
 	if(NULL == hSession) {
 		MessageBox(hwnd, _T("Cannot compose post request"),
 			szTitle, MB_ICONERROR | MB_OK);
@@ -894,6 +893,18 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 			szTitle, MB_ICONERROR | MB_OK);
 		return FALSE;
 	}
+
+	// Authorization header (for imgur api v3)
+	const TCHAR* ai = _T("Authorization: Client-ID 3e7a4deb7ac67da\r\n");
+	BOOL zResult = HttpAddRequestHeaders(
+		hRequest, ai, _tcslen(ai), 
+		HTTP_ADDREQ_FLAG_ADD | HTTP_ADDREQ_FLAG_REPLACE);
+	if (FALSE == zResult) {
+		MessageBox(hwnd, _T("Cannot set authorization id"),
+			szTitle, MB_ICONERROR | MB_OK);
+		return FALSE;
+	}
+
 	
 	// 要求を送信
 	if (HttpSendRequest(hRequest,
@@ -947,27 +958,28 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 
 			char * res = (char *)result.c_str();
 
-			Document doc;  
-			d.parse(res);
-			
-			xml_node<> *img = "https://i.imgur.com/#{doc["data"]["id"]}.png" 
-			//xml_node<> *lthumb = doc.first_node()->first_node("large_thumbnail");
-			xml_node<> *del = "https://i.imgur.com/delete/#{doc["data"]["deletehash"]}.png"
+			Document doc;
+			doc.Parse(res);
+
+			char img[100];
+			sprintf(img, "https://i.imgur.com/%s.png", doc["data"]["id"].GetString());
+			char del[100];
+			sprintf(del, "https://i.imgur.com/delete/%s.png", doc["data"]["deletehash"].GetString());
 
 			// クリップボードに URL をコピー
-			setClipBoardText(img->value());
+			setClipBoardText(img);
 			
 			// URL を起動
-			execUrl((*img).value()); 
+			execUrl(img); 
 
-			//std::stringstream s;
+			std::stringstream s;
 
-			//s << getenv("HOMEPATH") << "\\Documents\\imgyazo.html";
+			s << getenv("HOMEPATH") << "\\Documents\\imgyazo.html";
 
-			//std::ofstream myfile;
-			//myfile.open (s.str().c_str(), std::fstream::app);
-			//myfile << "<div style='padding:10px;width:250px;height:275px;float:left'><a href='"<< img->value() << "'><img src='" << (*lthumb).value() << "' height=250 width=250></img></a><button style='width:250px;height:25px' onclick=\"javascript:location.href='" << (*del).value() << "';\"'>^ delete ^</button></div>";
-			//myfile.close();
+			std::ofstream myfile;
+			myfile.open (s.str().c_str(), std::fstream::app);
+			myfile << "<div style='padding:10px;width:250px;height:275px;float:left'><a href='"<< img << "'><img src='" << img << "' height=250 width=250></img></a><button style='width:250px;height:25px' onclick=\"javascript:location.href='" << del << "';\"'>^ delete ^</button></div>";
+			myfile.close();
 
 			return TRUE;
 		}
