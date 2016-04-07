@@ -1,13 +1,15 @@
 // gyazowin.cpp : アプリケーションのエントリ ポイントを定義します。
 //
-#include "stdafx.h"
+include "stdafx.h"
 #include "rapidxml.hpp"
-#include "gyazowin.h"
+include "gyazowin.h"
+include "rapidjson.h"
 
-#include <iostream>
-#include <fstream>
+include <iostream>
+include <fstream>
 
-using namespace rapidxml;
+#using namespace rapidxml;
+using namespace rapidjson;
 
 
 // グローバル変数:
@@ -797,8 +799,8 @@ BOOL saveId(const WCHAR* str)
 // PNG ファイルをアップロードする.
 BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 {
-	const TCHAR* UPLOAD_SERVER	= _T("imgur.com");
-	const TCHAR* UPLOAD_PATH	= _T("/api/upload.xml");
+	const TCHAR* UPLOAD_SERVER	= _T("api.imgur.com");
+	const TCHAR* UPLOAD_PATH	= _T("/3/upload");
 
 	const char*  sBoundary = "----BOUNDARYBOUNDARY----";		// boundary
 	const char   sCrLf[]   = { 0xd, 0xa, 0x0 };					// 改行(CR+LF)
@@ -809,7 +811,7 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 	std::string			idStr;	// ID
 	
 	// ID を取得
-	idStr = "486690f872c678126a2c09a9e196ce1b";
+	idStr = "3e7a4deb7ac67da";
 
 	// メッセージの構成
 	// -- "id" part
@@ -864,7 +866,7 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 	
 	// 接続先
 	HINTERNET hConnection = InternetConnect(hSession, 
-		UPLOAD_SERVER, INTERNET_DEFAULT_HTTP_PORT,
+		UPLOAD_SERVER, INTERNET_DEFAULT_HTTPS_PORT,
 		NULL, NULL, INTERNET_SERVICE_HTTP, 0, NULL);
 	if(NULL == hSession) {
 		MessageBox(hwnd, _T("Cannot initiate connection"),
@@ -945,12 +947,12 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 
 			char * res = (char *)result.c_str();
 
-			xml_document<> doc;  
-			doc.parse<0>(res); 
-			xml_node<> *img = doc.first_node()->first_node("original_image");
-			xml_node<> *lthumb = doc.first_node()->first_node("large_thumbnail");
-			xml_node<> *del = doc.first_node()->first_node("delete_page");
-
+			Document doc;  
+			d.parse(res);
+			
+			xml_node<> *img = "https://i.imgur.com/#{doc["data"]["id"]}.png" 
+			//xml_node<> *lthumb = doc.first_node()->first_node("large_thumbnail");
+			xml_node<> *del = "https://i.imgur.com/delete/#{doc["data"]["deletehash"]}.png"
 
 			// クリップボードに URL をコピー
 			setClipBoardText(img->value());
@@ -958,14 +960,14 @@ BOOL uploadFile(HWND hwnd, LPCTSTR fileName)
 			// URL を起動
 			execUrl((*img).value()); 
 
-			std::stringstream s;
+			//std::stringstream s;
 
-			s << getenv("HOMEPATH") << "\\Documents\\imgyazo.html";
+			//s << getenv("HOMEPATH") << "\\Documents\\imgyazo.html";
 
-			std::ofstream myfile;
-			myfile.open (s.str().c_str(), std::fstream::app);
-			myfile << "<div style='padding:10px;width:250px;height:275px;float:left'><a href='"<< img->value() << "'><img src='" << (*lthumb).value() << "' height=250 width=250></img></a><button style='width:250px;height:25px' onclick=\"javascript:location.href='" << (*del).value() << "';\"'>^ delete ^</button></div>";
-			myfile.close();
+			//std::ofstream myfile;
+			//myfile.open (s.str().c_str(), std::fstream::app);
+			//myfile << "<div style='padding:10px;width:250px;height:275px;float:left'><a href='"<< img->value() << "'><img src='" << (*lthumb).value() << "' height=250 width=250></img></a><button style='width:250px;height:25px' onclick=\"javascript:location.href='" << (*del).value() << "';\"'>^ delete ^</button></div>";
+			//myfile.close();
 
 			return TRUE;
 		}
